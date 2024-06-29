@@ -1,0 +1,36 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # app:
+  #   build: .
+  #   ports:
+  #     - '3000:3000'
+  #   depends_on:
+  #     - elasticsearch
+  #   environment:
+  #     - OUTLOOK_CLIENT_ID=${OUTLOOK_CLIENT_ID}
+  #     - OUTLOOK_CLIENT_SECRET=${OUTLOOK_CLIENT_SECRET}
+  #     - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST}
+  #     - JWT_SECRET=${JWT_SECRET}
+  #   volumes:
+  #     - .:/usr/src/app
+  #     - /usr/src/app/node_modules
+  #   command: npm start
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
+    environment:
+      - discovery.type=single-node
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.1
+    ports:
+      - '5601:5601'
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
