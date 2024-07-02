@@ -4,9 +4,12 @@ import querystring from 'querystring';
 import { OAuthProvider } from './OAuthProvider';
 import { ElasticSearchClient } from '../ElasticSearchClient';
 import { UserService } from '../services/UserService';
-import { log } from 'console';
-import { Response } from 'express';
+import {v4 as uuidv4} from 'uuid';
+import {config as dotenvConfig} from 'dotenv';
+dotenvConfig();
 
+
+const webhookUrl = 'https://0493-202-74-245-225.ngrok-free.app/auth/webhook';
 export class OutlookOAuthProvider implements OAuthProvider {
     private clientId: string;
     private clientSecret: string;
@@ -18,8 +21,8 @@ export class OutlookOAuthProvider implements OAuthProvider {
     private userService: UserService;
     
     constructor() {
-        this.clientId = process.env.OUTLOOK_CLIENT_ID
-        this.clientSecret = process.env.OUTLOOK_CLIENT_SECRET
+        this.clientId = process.env.OUTLOOK_CLIENT_ID || '';
+        this.clientSecret = process.env.OUTLOOK_CLIENT_SECRET || '';
         this.redirectUri = 'http://localhost:3000/auth/outlook/callback';
         this.authorizationBaseUrl = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
         this.tokenUrl = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
@@ -76,14 +79,12 @@ export class OutlookOAuthProvider implements OAuthProvider {
 
     async subscribeToOutlookWebhook(accessToken: string) {
         try {
-            // Get access token using client credentials flow
-            // Create subscription payload
             const subscriptionPayload = {
                 changeType: 'created,updated,deleted',
-                notificationUrl: `https://bc42-160-238-33-8.ngrok-free.app/auth/webhook`,
+                notificationUrl: webhookUrl,
                 resource: '/me/mailFolders(\'inbox\')/messages',
                 expirationDateTime: new Date(Date.now() + 86400000).toISOString(), // Subscription expiration (24 hours)
-                clientState: "secretClientValue",
+                clientState: uuidv4(),
                 latestSupportedTlsVersion: "v1_2"
             };
     

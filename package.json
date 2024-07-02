@@ -4,9 +4,10 @@
   "description": "Your project description",
   "main": "dist/app.js",
   "scripts": {
-    "dev": "tsc -w && node dist/app.js",
+    "dev": "yarn run build && node dist/app.js",
     "start": "node dist/app.js",
     "build": "tsc",
+    "watch": "tsc -w",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up",
     "docker:down": "docker-compose down",
@@ -17,12 +18,12 @@
   "dependencies": {
     "@elastic/elasticsearch": "^7.10.1",
     "@types/uuid": "^10.0.0",
-    "axios": "^0.21.1",
+    "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.2",
     "querystring": "^0.2.0",
     "uuid": "^10.0.0"
   },
