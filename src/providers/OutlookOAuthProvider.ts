@@ -6,6 +6,9 @@ import { ElasticSearchClient } from '../ElasticSearchClient';
 import { UserService } from '../services/UserService';
 import { log } from 'console';
 import { Response } from 'express';
+import { v4 as uuidv4 } from 'uuid';
+import dotenv from 'dotenv';
+dotenv.config();
 
 export class OutlookOAuthProvider implements OAuthProvider {
     private clientId: string;
@@ -18,8 +21,8 @@ export class OutlookOAuthProvider implements OAuthProvider {
     private userService: UserService;
     
     constructor() {
-        this.clientId = process.env.OUTLOOK_CLIENT_ID
-        this.clientSecret = process.env.OUTLOOK_CLIENT_SECRET
+        this.clientId = process.env.OUTLOOK_CLIENT_ID||""
+        this.clientSecret = process.env.OUTLOOK_CLIENT_SECRET||""
         this.redirectUri = 'http://localhost:3000/auth/outlook/callback';
         this.authorizationBaseUrl = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
         this.tokenUrl = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
@@ -80,10 +83,10 @@ export class OutlookOAuthProvider implements OAuthProvider {
             // Create subscription payload
             const subscriptionPayload = {
                 changeType: 'created,updated,deleted',
-                notificationUrl: `https://bc42-160-238-33-8.ngrok-free.app/auth/webhook`,
+                notificationUrl: `https://fec8-160-238-33-9.ngrok-free.app/auth/webhook`,
                 resource: '/me/mailFolders(\'inbox\')/messages',
                 expirationDateTime: new Date(Date.now() + 86400000).toISOString(), // Subscription expiration (24 hours)
-                clientState: "secretClientValue",
+                clientState: uuidv4(),
                 latestSupportedTlsVersion: "v1_2"
             };
     

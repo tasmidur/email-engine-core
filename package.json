@@ -4,7 +4,7 @@
   "description": "Your project description",
   "main": "dist/app.js",
   "scripts": {
-    "dev": "tsc -w && node dist/app.js",
+    "dev": "tsc && node dist/app.js",
     "start": "node dist/app.js",
     "build": "tsc",
     "docker:build": "docker-compose build",
@@ -20,7 +20,7 @@
     "axios": "^0.21.1",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
-    "dotenv": "^8.2.0",
+    "dotenv": "^16.4.5",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
     "querystring": "^0.2.0",
