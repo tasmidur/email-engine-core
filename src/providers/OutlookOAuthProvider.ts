@@ -9,7 +9,7 @@ import {config as dotenvConfig} from 'dotenv';
 dotenvConfig();
 
 
-const webhookUrl = 'https://0493-202-74-245-225.ngrok-free.app/auth/webhook';
+const webhookUrl = 'https://7807-160-238-33-13.ngrok-free.app/auth/webhook';
 export class OutlookOAuthProvider implements OAuthProvider {
     private clientId: string;
     private clientSecret: string;
@@ -83,9 +83,7 @@ export class OutlookOAuthProvider implements OAuthProvider {
                 changeType: 'created,updated,deleted',
                 notificationUrl: webhookUrl,
                 resource: '/me/mailFolders(\'inbox\')/messages',
-                expirationDateTime: new Date(Date.now() + 86400000).toISOString(), // Subscription expiration (24 hours)
-                clientState: uuidv4(),
-                latestSupportedTlsVersion: "v1_2"
+                expirationDateTime: new Date(Date.now() + 3600 * 1000).toISOString()
             };
     
             // Send POST request to Graph API to create subscription

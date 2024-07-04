@@ -9,8 +9,19 @@ const userService = new UserService();
 const oauthProvider = new OutlookOAuthProvider();
 
 router.post('/webhook', (req, res) => {
-    console.log('Received webhook notification:', req.body);
-    res.status(200).send('OK');
+    if (req.query && req.query.validationToken) {
+        res.send(req.query.validationToken);
+        return;
+    }
+
+    const {value} = req.body;
+    value.forEach((notification:any)=> {
+        console.log('Notification received:', notification);
+
+        // Handle email processing here, e.g., fetching email details and processing
+    });
+
+    res.sendStatus(202);
 });
 
 router.post('/register', async (req: Request, res: Response) => {
@@ -60,24 +71,23 @@ router.get('/outlook/callback', async (req: Request, res: Response) => {
 
     try {
         const {access_token,refresh_token,expires_in} = await oauthProvider.getTokenFromCode(code);
-        const userData = await oauthProvider.getUserInfo(access_token);
+        //const userData = await oauthProvider.getUserInfo(access_token);
 
-        const tokenExpires = new Date(Date.now() + (parseInt(expires_in) - 300) * 1000);
+        //const tokenExpires = new Date(Date.now() + (parseInt(expires_in) - 300) * 1000);
 
-        const userPayload:UserUpdate={
-            oauth_provider_type:"OutLook",
-            oauth_email:userData.mail,
-            access_token,
-            refresh_token,
-            expires_in:tokenExpires
+        // const userPayload:UserUpdate={
+        //     oauth_provider_type:"OutLook",
+        //     oauth_email:userData.mail,
+        //     access_token,
+        //     refresh_token,
+        //     expires_in:tokenExpires
 
-        }
+        // }
         //await userService.updateUser(userId,userPayload);
-        const userMail= await oauthProvider.getUserMail(access_token);
-       // await oauthProvider.subscribeToOutlookWebhook(access_token);
+        //const userMail= await oauthProvider.getUserMail(access_token);
+        const sub=await oauthProvider.subscribeToOutlookWebhook(access_token);
         res.json({
-            userPayload,
-            userMail:userMail,
+            userMail:sub,
             message: 'Outlook account linked successfully' 
         });
     } catch (error) {
