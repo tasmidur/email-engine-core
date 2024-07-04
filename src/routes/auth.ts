@@ -8,11 +8,9 @@ const router = Router();
 const userService = new UserService();
 const oauthProvider = new OutlookOAuthProvider();
 
-router.post('/webhook', (req: Request, res: Response) => {
+router.post('/webhook', (req, res) => {
     console.log('Received webhook notification:', req.body);
-    // Handle the webhook notification here
-    // For example, process the notification and send a response
-    res.status(200).send('Webhook notification received successfully');
+    res.status(200).send('OK');
 });
 
 router.post('/register', async (req: Request, res: Response) => {
@@ -75,10 +73,11 @@ router.get('/outlook/callback', async (req: Request, res: Response) => {
 
         }
         //await userService.updateUser(userId,userPayload);
-        //const userMail= await oauthProvider.getUserMail(access_token);
-        await oauthProvider.subscribeToOutlookWebhook(access_token);
-        res.json({ 
-            userMail:{},
+        const userMail= await oauthProvider.getUserMail(access_token);
+       // await oauthProvider.subscribeToOutlookWebhook(access_token);
+        res.json({
+            userPayload,
+            userMail:userMail,
             message: 'Outlook account linked successfully' 
         });
     } catch (error) {

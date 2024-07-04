@@ -2,9 +2,10 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import authRoutes from './routes/auth';
-import { config as dotenvConfig } from 'dotenv'
-// Load environment variables from .env file
-dotenvConfig()
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+console.log("ev",process.env.PORT)
 
 const app = express();
 
