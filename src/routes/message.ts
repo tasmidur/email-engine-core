@@ -8,7 +8,7 @@ const messageService = new MessageService();
 const outlookOAuthProvider = new OutlookOAuthProvider();
 router.post('/create', async (req: Request, res: Response) => {
     const body = req.body;
-    let messageType = await outlookOAuthProvider.getMessageType(body);
+    let messageType = outlookOAuthProvider.getMessageType(body);
     const message: Message = {
         messageId: body.id,
         userId: "111",
@@ -19,7 +19,7 @@ router.post('/create', async (req: Request, res: Response) => {
         body: body.body,
         isRead: body.isRead,
         isDraft: body.isDraft,
-        messageType: messageType,
+        messageType: messageType||"new",
         sender: {
             email: body.sender.emailAddress.address,
             name: body.sender.emailAddress.name
@@ -31,6 +31,13 @@ router.post('/create', async (req: Request, res: Response) => {
         createAt: new Date(),
     }
     const response = await messageService.createMessage(message);
+    return res.json(response);
+});
+
+
+router.post('/create-bulk', async (req: Request, res: Response) => {
+    const body = req.body;
+    const response = await messageService.syncMessages(body);
     return res.json(response);
 });
 

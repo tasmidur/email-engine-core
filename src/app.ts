@@ -1,5 +1,6 @@
 // src/app.ts
 import express from 'express';
+import session from 'express-session';
 import bodyParser from 'body-parser';
 import authRoutes from './routes/auth';
 import messageRouters from './routes/message';
@@ -9,8 +10,20 @@ dotenv.config();
 const app = express();
 
 app.use(bodyParser.json());
+app.use(session({
+    secret: process.env.SESSION_SECRET_KEY || '',  // replace with a strong secret key
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production', // Set to true if using https
+      maxAge: 60000 // Cookie expiration time in milliseconds
+    }
+  }));
+  
 app.use('/auth', authRoutes);
 app.use('/message', messageRouters);
+
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
