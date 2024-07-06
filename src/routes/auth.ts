@@ -1,17 +1,12 @@
-// src/routes/auth.ts
 import { Router, Request, Response } from "express";
 import { UserService } from "../services/UserService";
-import { OutlookOAuthProvider } from "../providers/OutlookOAuthProvider";
-import { UserUpdate } from "../models/User";
 import { PROVIDER_TYPE_OUTLOOK } from "../utils/Constant";
-import { responseMessage } from "../utils/helpers";
-import { markAsUntransferable } from "worker_threads";
-
+import {  responseMessage } from "../utils/helpers";
+import { OutlookOAuthProvider } from '../providers/OutlookOAuthProvider';
 
 const router = Router();
 const userService = new UserService();
-const oauthProvider = new OutlookOAuthProvider();
-
+const outlookOAuthProvider=new OutlookOAuthProvider();
 /**
  * User Register Handler
  */
@@ -39,110 +34,71 @@ router.post("/register", async (req: Request, res: Response) => {
   });
 });
 
-/**
- * After registration it create to outlook
- */
-router.post("/link-outlook/:userId", async (req: Request, res: Response) => {
-  const { oauth_email, oauth_provider_type, oauth_refresh_token } = req.body;
-  const { userId } = req.params;
-  const userPayload: any = {
-    oauth_email,
-    oauth_provider_type,
-    oauth_refresh_token,
-  };
 
-  try {
-    const user = await userService.updateUser(userId, userPayload);
-    res.json({
-      user_id: user,
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Error creating user" });
+router.get("/link/:provider/:userId", (req: Request, res: Response) => {
+  const { provider:providerType,userId } = req.params;
+
+  if (providerType==PROVIDER_TYPE_OUTLOOK) {
+    const authorizationUrl = outlookOAuthProvider.getAuthUrl(userId);
+    res.redirect(authorizationUrl);
   }
-});
 
-router.get("/link-outlook/:userId", (req: Request, res: Response) => {
-  const { userId } = req.params;
-  const authorizationUrl = oauthProvider.getAuthUrl(userId);
-  res.redirect(authorizationUrl);
 });
 
 /**
- * Outlook callback handler
+ * Provider callback handler
  */
-router.get("/outlook/callback", async (req: Request, res: Response) => {
-  const code = req.query.code as string;
-  const userId = req.query.state as string;
+router.get("/:provider/callback", async (req: Request, res: Response) => {
+  const providerType:string=req.params.provider
+  if (providerType==PROVIDER_TYPE_OUTLOOK) {
+    const code = req.query.code as string;
+    const userId = req.query.state as string;
 
-  try {
-    const { access_token, refresh_token, expires_in } =
-      await oauthProvider.getTokenFromCode(code);
-    const userData = await oauthProvider.getUserInfo(access_token);
-
-    const tokenExpires = new Date(
-      Date.now() + (parseInt(expires_in) - 300) * 1000
-    );
-
-    const userPayload: UserUpdate = {
-      providerType: PROVIDER_TYPE_OUTLOOK,
-      emailAddress: userData.mail,
-      displayName: userData.displayName,
-      identityKey: userData.id,
-      accessToken: access_token || "",
-      refreshToken: refresh_token || "",
-      expireIn: tokenExpires || new Date(),
-      updateAt: new Date(),
-    };
-
+    console.log("code",code,"userId",userId);
+    
+    outlookOAuthProvider.handlOutlookCallback(code,userId)
+    const cronExpression=`* * * * *`;
+    // const tokenApdateScheduler=await userService.scheduleUserCronJob(userId,cronExpression,async()=>{
+    //   await outlookOAuthProvider.renewTokenAndSubscription(userId)
+    // })
+    console.log(`Successfully handle ${providerType} callback`);
+    res.status(200).json(responseMessage(400,"Success full"))
     /**
-     * updateUser details
+     * add here frontend url
      */
-    await userService.updateUser(userId, userPayload);
-    /**
-     * syncAllMessages by access token
-     */
-    oauthProvider
-      .syncAllMessages(access_token, userId)
-      .then((res) => console.log(res));
-
-    /**
-     * subscribe to OutlookWebhook for real time mail change notifications
-     */
-    await oauthProvider.subscribe(access_token,userId);
-
-    res.json(responseMessage(200, "Outlook account linked successfully"));
-  } catch (error) {
-    console.log(error);
-    res.status(500).json(
-      responseMessage(200, "Error linking Outlook account", {
-        errors: error,
-      })
-    );
+  }else{
+    res.status(400).json(responseMessage(400,"Invalid provider"))
   }
+ 
 });
 
 /**
  * Handle real-time notifications
  */
-router.post("/notifications", async (req, res) => {
+router.post("/:provider/notifications", async (req, res) => {
+  const {provider:providerType}=req.params
   if (req.query && req.query.validationToken) {
     res.send(req.query.validationToken);
     return;
   }
 
-  const { value } = req.body;
-  for (const notification of value) {
-     let userId=notification?.clientState; 
-     let messageId=notification?.resourceData?.id;
-     if(userId){
-      let user=await userService.getUserById(userId);
-      const syncMessage=await oauthProvider.syncMessage(user?.data?.accessToken,messageId,userId)
-      console.log(messageId);
-     }
-     
-  }
+  if (providerType==PROVIDER_TYPE_OUTLOOK) {
+    const { value } = req.body;
+    for (const notification of value) {
+      let userId = notification?.clientState;
+      let messageId = notification?.resourceData?.id;
 
-  res.sendStatus(202);
+      if (userId) {
+        let user = await userService.getUserById(userId);
+        await outlookOAuthProvider.syncMessage(user?.data?.accessToken, messageId, userId);
+        console.log(messageId);
+      }
+    }
+   // outlookOAuthProvider.handleNotification(req,res);
+    console.log(`Successfully handle ${providerType} notification callback`);
+    res.sendStatus(202);
+  }
+  
 });
 
 export default router;

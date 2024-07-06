@@ -10,6 +10,8 @@ export interface User {
   accessToken: string;
   refreshToken: string;
   expireIn: Date;
+  notificationSubscriptionId:string,
+  notificationSubscriptionExpirationDateTime:Date,
   createAt: Date;
   updateAt: Date;
 }
@@ -45,6 +47,8 @@ export const UserSchema = {
         accessToken: { type: "text" },
         refreshToken: { type: "text" },
         expireIn: { type: "date" },
+        notificationSubscriptionId:{type:"keyword"},
+        notificationSubscriptionExpirationDateTime:{type:"date"},
         createAt: { type: "date" },
         updateAt: { type: "date" },
       },

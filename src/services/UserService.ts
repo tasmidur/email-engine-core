@@ -5,6 +5,7 @@ import { UserCreate, UserSchema, UserUpdate } from "../models/User";
 import { ElasticSearchService } from "./ElasticSearchService";
 import { USER_INDEX } from "../utils/Constant";
 import { responseMessage } from "../utils/helpers";
+import cron from "node-cron";
 
 const elasticSearchClient = new ElasticSearchService();
 
@@ -46,22 +47,53 @@ export class UserService {
     }
   }
 
-  async getUserById(id:string): Promise<any>{
-    const userDetail=await elasticSearchClient.getDocument(this.indexName,id);
-    return responseMessage(200,"User Details",userDetail);
+  async getUserById(id: string): Promise<any> {
+    const userDetail = await elasticSearchClient.getDocument(
+      this.indexName,
+      id
+    );
+    console.log("getUserById",responseMessage(200, "User Details", userDetail));
+    
+    return responseMessage(200, "User Details", userDetail);
   }
 
   async updateUser(userId: string, payload: UserUpdate): Promise<any> {
-    return await elasticSearchClient.updateDocument(
-      this.indexName,
-      userId,
-      payload
-    );
+    try {
+      const userResponse=await elasticSearchClient.updateDocument(
+        this.indexName,
+        userId,
+        payload
+      );
+      return responseMessage(200, "User update successfully", userResponse);
+    } catch (error:any) {
+      const{status,message,data}=error.response;
+      return responseMessage(status, message, data);
+    }
   }
 
   generateJwt(payload: any): string {
     return jwt.sign(payload, String(process.env.JWT_SECRET), {
       expiresIn: "1h",
     });
+  }
+
+  async scheduleUserCronJob(
+    userId: string,
+    cronExpression: string,
+    task: () => Promise<void>
+  ) {
+    cron.schedule(cronExpression, async () => {
+      console.log(`Running cron job for user: ${userId}`);
+      await task();
+    });
+    console.log(
+      `Cron job scheduled for user: ${userId} with expression: ${cronExpression}`
+    );
+  }
+
+  isAccessTokenExpire(tokenExpires: string): boolean {
+    const expirationDate = new Date(tokenExpires);
+    const now = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes in milliseconds
+    return true;//now >= expirationDate;
   }
 }
