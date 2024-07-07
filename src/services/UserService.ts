@@ -35,7 +35,7 @@ export class UserService {
         }
       );
       if (userExist.length) {
-        return responseMessage(409, "User already exist");
+        return responseMessage(200, "User created successfully", await elasticSearchClient.getDocument(this.indexName, userExist[0]._id));
       }
       const userCreated = await elasticSearchClient.createDocument(
         this.indexName,
@@ -53,7 +53,6 @@ export class UserService {
       id
     );
     console.log("getUserById",responseMessage(200, "User Details", userDetail));
-    
     return responseMessage(200, "User Details", userDetail);
   }
 
@@ -73,7 +72,22 @@ export class UserService {
 
   generateJwt(payload: any): string {
     return jwt.sign(payload, String(process.env.JWT_SECRET), {
-      expiresIn: "1h",
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+    });
+  }
+
+   generateAccessToken(payload:any) {
+    return jwt.sign(payload, String(process.env.JWT_SECRET), {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+    });
+  }
+
+  generateRefreshToken(payload:any) {
+    return jwt.sign({
+      ...payload,
+      refresh: true,
+    }, String(process.env.JWT_SECRET), {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
     });
   }
 
@@ -94,6 +108,7 @@ export class UserService {
   isAccessTokenExpire(tokenExpires: string): boolean {
     const expirationDate = new Date(tokenExpires);
     const now = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes in milliseconds
-    return true;//now >= expirationDate;
+    console.log("isAccessTokenExpire",now,expirationDate,"expire: ",now >= expirationDate)
+    return now >= expirationDate;
   }
 }

@@ -49,6 +49,33 @@ export class ElasticSearchService {
     }
   }
 
+    async getDocumentWithPagination(index: string, query: object, size: number = 10, from: number = 0): Promise<{
+        total: number;
+        data: any[];
+        nextPage: number | null;
+    }> {
+        try {
+            const response = await this.client.search({
+                index,
+                body: {
+                    query,
+                    size,
+                    from,
+                },
+            });
+
+            const hits = response.body.hits.hits;
+            const total = response.body.hits.total.value;
+            const data = hits;
+            const nextPage = hits.length === size ? from + size : null;
+
+            return { total, data, nextPage };
+        } catch (error) {
+            console.error("\nError searching documents:", error);
+            throw new Error("\nError searching documents");
+        }
+    }
+
   async updateDocument(index: string, id: string, document: object) {
     try {
       const response = await this.client.update({
@@ -83,7 +110,7 @@ export class ElasticSearchService {
       const response = await this.client.search({
         index,
         body: {
-          query: query,
+          query: query
         },
       });
       const hits = response?.body?.hits?.hits;

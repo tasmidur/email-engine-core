@@ -33,6 +33,11 @@ export interface UserUpdate extends Partial<User> {
   updateAt: Date;
 }
 
+export interface JwtTokenPayload {
+    id: string;
+    username: string;
+}
+
 export const UserSchema = {
   index: USER_INDEX,
   body: {
