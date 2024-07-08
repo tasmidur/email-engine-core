@@ -19,7 +19,7 @@ export default function RootLayout({children}) {
                   {children}
               </AuthProvider>
           </ThemeProvider>
-          <ToastContainer autoClose={false} draggable={false}/>
+          <ToastContainer autoClose={3000} draggable={false}/>
         </AppRouterCacheProvider>
       </body>
     </html>

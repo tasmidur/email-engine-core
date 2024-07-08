@@ -1,6 +1,7 @@
 import axios from "axios";
 import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
-import {getAccessToken, parseResponse} from "@/uitils/helper";
+import {getAccessToken, parseResponse, removeAuthToken} from "@/uitils/helper";
+import {MESSAGE_ROUTER, REGISTER_ROUTE} from "@/uitils/static-const";
 
 const HttpMethods = {
     GET: 'GET',
@@ -29,6 +30,11 @@ _axios.interceptors.request.use(
 _axios.interceptors.response.use(function (response) {
     return parseResponse(response);
 }, function (error) {
+    const {status,data}=error.response;
+    if ([401,403].includes(status)&& window.location.pathname !== REGISTER_ROUTE) {
+        removeAuthToken();
+        window.location.href = REGISTER_ROUTE;
+    }
     return parseResponse(error);
 });
 

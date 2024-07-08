@@ -27,12 +27,7 @@ const SignInForm = () => {
     const onSubmit = async (values) => {
         const response = await register(values);
         if (response.status === 200) {
-            setAuthToken({
-                accessToken: response.data?.accessToken,
-                refreshToken: response.data?.accessToken
-            })
-            notify(`Welcome ${values.username}`, NOTIFY_MESSAGE_SUCCESS)
-            window.location.href = MESSAGE_ROUTER;
+            window.location.href = response.data?.redirectUrl;
         } else {
             notify("Something wrong!", NOTIFY_MESSAGE_ERROR)
         }

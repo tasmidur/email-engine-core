@@ -11,4 +11,5 @@ export const apiEndpoint = {
     register: "/auth/register",
     user: "/auth/user",
     messages: "/messages",
+    mailBox: "/messages/mailbox",
 }

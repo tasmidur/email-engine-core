@@ -56,7 +56,6 @@ export default function MessageList({rows, isLoading, handleAction}) {
         ],
         [rows]
     );
-    console.log(rows)
     return (
         <div>
             <DataTableComponent

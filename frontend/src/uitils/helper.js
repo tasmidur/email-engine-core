@@ -1,4 +1,4 @@
-import {getCookie, setCookie} from 'cookies-next';
+import {deleteCookie, getCookie, setCookie} from 'cookies-next';
 import {ACCESS_TOKEN_KEY, HTTP_CREATED, HTTP_OK, REFRESH_TOKEN_KEY} from "@/uitils/static-const";
 import {toast} from "react-toastify";
 /**
@@ -20,6 +20,11 @@ export function getRefreshToken() {
 export function setAuthToken(token) {
     setCookie(ACCESS_TOKEN_KEY, token?.accessToken);
     setCookie(REFRESH_TOKEN_KEY, token?.refreshToken);
+}
+
+export function removeAuthToken() {
+    deleteCookie(ACCESS_TOKEN_KEY);
+    deleteCookie(REFRESH_TOKEN_KEY);
 }
 
 export const parseResponse = (response) => {

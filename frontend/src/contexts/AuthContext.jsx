@@ -9,6 +9,7 @@ import React, {
 import apiClient from "@/lib/axios";
 import {usePathname} from "next/navigation";
 import {apiEndpoint, REGISTER_ROUTE} from "@/uitils/static-const";
+import {getAccessToken} from "@/uitils/helper";
 
 
 const AuthContext = createContext();
@@ -20,7 +21,8 @@ export const AuthProvider = ({children}) => {
     const fetchUser = useCallback(async () => {
         const userInfo = await apiClient.get(apiEndpoint.user);
         const currentUser = userInfo?.data;
-        if (currentUser) {
+
+        if (Object.keys(currentUser).length > 0) {
             setUser(currentUser);
         }
         return currentUser;
@@ -28,7 +30,9 @@ export const AuthProvider = ({children}) => {
 
 
     useEffect(() => {
-        fetchUser()
+        if (getAccessToken()) {
+            fetchUser();
+        }
     }, [fetchUser]);
 
     const register = async (payload) => {
@@ -36,14 +40,14 @@ export const AuthProvider = ({children}) => {
     };
 
     return (
-            <AuthContext.Provider
-                value={{
-                    user,
-                    register
-                }}
-            >
-                {children}
-            </AuthContext.Provider>
+        <AuthContext.Provider
+            value={{
+                user,
+                register
+            }}
+        >
+            {children}
+        </AuthContext.Provider>
     );
 };
 

@@ -1,5 +1,5 @@
 "use client";
-import {Paper, Grid, Typography} from '@mui/material'
+import {Paper} from '@mui/material'
 import {useState} from "react";
 import SignInForm from "@/app/register/_SignInForm";
 
