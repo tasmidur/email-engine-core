@@ -2,7 +2,7 @@
   "name": "mail-box",
   "version": "1.0.0",
   "scripts": {
-    "install:all": "yarn install && yarn install:api && yarn install:frontend",
+    "install:all": "yarn run install && yarn run install:api && yarn run install:frontend",
     "install:api": "cd api && yarn install",
     "install:frontend": "cd frontend && yarn install",
     "build": "yarn build:api && yarn build:frontend",
