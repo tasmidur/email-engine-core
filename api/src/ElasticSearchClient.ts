@@ -35,7 +35,7 @@ export class ElasticSearchClient {
                 body: document,
                 refresh: true,
             });
-            console.log("Document indexed:", response);
+            //console.log("Document indexed:", response);
             return this.getDocument(index, response?.body._id);
         } catch (error) {
             console.error("Error indexing document:", error);
@@ -48,7 +48,7 @@ export class ElasticSearchClient {
                 index,
                 id,
             });
-            console.log("Document retrieved:", response.body);
+            //console.log("Document retrieved:", response.body);
             return response?.body || {};
         } catch (error) {
             console.error("Error retrieving document:", error);
@@ -104,7 +104,7 @@ export class ElasticSearchClient {
                 },
                 refresh: true
             });
-            console.log("Document updated:", response);
+           // console.log("Document updated:", response);
             return this.getDocument(index, response?.body._id);
         } catch (error) {
             console.error("Error updating document:", error);
@@ -120,7 +120,7 @@ export class ElasticSearchClient {
                 },
                 refresh: true
             });
-            console.log("delete response", response.body)
+            //console.log("delete response", response.body)
             return response.body;
         } catch (error) {
             console.error("Error deleting document:", error);
@@ -135,7 +135,7 @@ export class ElasticSearchClient {
                     ...query
                 },
             });
-            console.log("Documents retrieved:", JSON.stringify(response.body, null, 2))
+            //console.log("Documents retrieved:", JSON.stringify(response.body, null, 2))
             const hits = response?.body?.hits?.hits;
             return hits.length > 0 ? hits : [];
         } catch (error) {

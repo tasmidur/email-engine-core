@@ -36,7 +36,9 @@ app.listen(PORT, () => {
 });
 
 const oauthProvider=new OutlookOAuthProvider()
+const userService=new UserService();
+
 const cronExpression = `* * * * *`;
 scheduleCronJob(cronExpression, async () => {
-    (new UserService()).syncUsers(oauthProvider).then(res => console.log("user sync")).catch(err => console.log(err))
+    userService.syncUsers(oauthProvider).then(res => console.log("user sync........")).catch(err => console.log(err))
 }).then(res => console.log("Cron Job Scheduled")).catch(err => console.log("Error:Cron Job", err));

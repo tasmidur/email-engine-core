@@ -125,9 +125,12 @@ router.post("/:provider/notifications", async (req, res) => {
                 let messageId = notification?.resourceData?.id;
                 if (userId) {
                     let user = await userService.getUserById(userId);
+                    console.log("same id",user?.data?.notificationSubscriptionId === notification?.subscriptionId);
+                    
                     if (user?.data?.notificationSubscriptionId === notification?.subscriptionId) {
-                        //await outlookOAuthProvider.syncMessage(user?.data?.accessToken, messageId, userId);
+
                         outlookOAuthProvider.syncAllMessages(user?.data?.accessToken, userId).then(res => {
+                           console.log("sync message......");
                             publishMessage(userId, {
                                 userId,
                                 messageId

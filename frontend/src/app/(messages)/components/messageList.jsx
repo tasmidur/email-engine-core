@@ -5,7 +5,7 @@ import {Chip, Stack} from "@mui/material";
 import Typography from "@mui/material/Typography";
 import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined';
 import MarkEmailUnreadOutlinedIcon from '@mui/icons-material/MarkEmailUnreadOutlined';
-
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 export default function MessageList({rows, isLoading,handlePageSizeChange, handlePageChange}) {
     const columns = useMemo(
         () => [
@@ -44,14 +44,15 @@ export default function MessageList({rows, isLoading,handlePageSizeChange, handl
                 }
             },
             {
-                name: 'Is Read',
+                name: 'Status',
                 sortable: false,
-                minWidth: '10%',
+                minWidth: '20%',
                 button: true,
                 cell: (row) => {
-                    return<>
-                        {row?._source?.isRead ? <Chip icon={<MarkEmailReadOutlinedIcon />} label="Read" /> : <Chip icon={<MarkEmailUnreadOutlinedIcon />} label="Un Read" variant="outlined" />}
-                    </>
+                    return<Stack direction="row" spacing={1}>
+                        {row?._source?.isRead ? <Chip icon={<MarkEmailReadOutlinedIcon />} label="Read" color={"primary"} /> : <Chip icon={<MarkEmailUnreadOutlinedIcon />} label="Un Read" variant="outlined" color={"secondary"}/>}
+                        {row?._source?.isFlagged && <Chip icon={<FlagOutlinedIcon />} color={"error"} label="Flag" />}
+                    </Stack>
                 }
             }
         ],
@@ -63,10 +64,10 @@ export default function MessageList({rows, isLoading,handlePageSizeChange, handl
                 title=""
                 progressPending={isLoading}
                 columns={columns}
-                data={rows.data}
+                data={rows?.data}
                 pagination
                 paginationServer
-                paginationTotalRows={rows.total}
+                paginationTotalRows={rows?.total}
                 onChangeRowsPerPage={handlePageSizeChange}
                 onChangePage={handlePageChange}
             />

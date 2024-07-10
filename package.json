@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "install:all": "yarn run install && yarn run install:api && yarn run install:frontend",
-    "install:api": "cd api && yarn install",
-    "install:frontend": "cd frontend && yarn install",
+    "install:api": "cd api && yarn",
+    "install:frontend": "cd frontend && yarn",
     "build": "yarn build:api && yarn build:frontend",
     "build:api": "cd api && yarn build",
     "build:frontend": "cd frontend && yarn build",
@@ -13,6 +13,9 @@
     "watch:api": "cd api && yarn run watch",
     "start:frontend": "cd frontend && yarn start",
     "dev:frontend": "cd frontend && yarn run dev"
+  },
+  "dependencies": {
+    "styled-components": "^6.1.11",
+    "swr": "^2.2.5"
   }
 }
-

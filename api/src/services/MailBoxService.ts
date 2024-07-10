@@ -90,7 +90,7 @@ export class MailBoxService {
                     }
                 }
             });
-            return responseMessage(200, "Mailbox details", response);
+            return responseMessage(200, "Mailbox details", (response[0]??{}));
         } catch (error) {
             console.log("Error getting mailbox details", error)
             return responseMessage(500, "Error getting mailbox details");

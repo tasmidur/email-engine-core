@@ -102,7 +102,7 @@ export class UserService {
         });
 
         for (let user of users) {
-           // await this.syncUserDetails(user,provider);
+            await this.syncUserDetails(user,provider);
             // if (user.accessToken && user.refreshToken && user.notificationSubscriptionId) {
             //     {
             //         await this.syncUserDetails(user,provider);

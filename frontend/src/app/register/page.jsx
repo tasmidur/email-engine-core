@@ -10,14 +10,6 @@ const Background = {
 }
 
 const SignInPage = () => {
-    const [values, setValues] = useState({})
-    const handleChange = (event) => {
-        setValues((prevValues) => ({
-            ...prevValues,
-            // we use the name to tell Formik which key of `values` to update
-            [event.target.name]: event.target.value,
-        }))
-    }
     return (
         <Paper
             style={Background}

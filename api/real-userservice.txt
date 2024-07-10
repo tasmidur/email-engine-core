@@ -3,9 +3,7 @@ import jwt from "jsonwebtoken";
 import {UserCreate, UserSchema, UserUpdate} from "../models/User";
 import {USER_INDEX} from "../utils/Constant";
 import {formatedExpireTime, isExpire, responseMessage} from "../utils/helpers";
-import cron from "node-cron";
 import {ElasticSearchClient} from "../ElasticSearchClient";
-import { log } from "console";
 
 const elasticSearchClient = new ElasticSearchClient();
 
@@ -102,12 +100,12 @@ export class UserService {
         });
 
         for (let user of users) {
-           // await this.syncUserDetails(user,provider);
-            // if (user.accessToken && user.refreshToken && user.notificationSubscriptionId) {
-            //     {
-            //         await this.syncUserDetails(user,provider);
-            //     }
-            // }
+
+            if (user.accessToken && user.refreshToken && user.notificationSubscriptionId) {
+                {
+                    await this.syncUserDetails(user,provider);
+                }
+            }
         }
     }
 
@@ -119,44 +117,45 @@ export class UserService {
             notificationSubscriptionId,
             notificationSubscriptionExpirationDateTime
         } = userInfo?._source;
-        let userId=userInfo?._id
        
-     
-        console.log("userInfo", isExpire(expireIn) || !notificationSubscriptionId || (notificationSubscriptionId && isExpire(notificationSubscriptionExpirationDateTime)))
-        //if (isExpire(expireIn) || !notificationSubscriptionId || (notificationSubscriptionId && isExpire(notificationSubscriptionExpirationDateTime))) {
+        if (isExpire(expireIn) || !notificationSubscriptionId || (notificationSubscriptionId && isExpire(notificationSubscriptionExpirationDateTime))) {
             /**
              * Refresh token if expire
              */
-            //if (isExpire(expireIn)) {
+            if (isExpire(expireIn)) {
                 const {
                     access_token,
                     refresh_token,
                     expires_in
                 } = await provider.refreshAccessToken(refreshToken);
-                console.log("RefreshToken:", access_token, refresh_token, expires_in);
+
+                console.log("RefreshToken:Done",access_token);
+
                 if (access_token && refresh_token && expires_in) {
                     accessToken = access_token;
                     refreshToken = refresh_token;
                     expireIn = formatedExpireTime(expires_in);
                 }
-            //} else if (accessToken) {
-                ///if (notificationSubscriptionId && isExpire(notificationSubscriptionExpirationDateTime)) {
+            } else if (accessToken) {
+                if (notificationSubscriptionId && isExpire(notificationSubscriptionExpirationDateTime)) {
                     const subscriptionRenew = await provider.renewSubscription(accessToken, notificationSubscriptionId);
+                    
                     console.log("renew subscriptionRenew:", subscriptionRenew)
+
                     if (subscriptionRenew?.id && subscriptionRenew?.expirationDateTime) {
                         notificationSubscriptionId = subscriptionRenew?.id;
                         notificationSubscriptionExpirationDateTime = formatedExpireTime(subscriptionRenew?.expirationDateTime)
                     }
-                //} else if (!notificationSubscriptionId) {
+                } else if (!notificationSubscriptionId) {
                     const subscription = await provider.toSubscribe(accessToken, userInfo.id)
                     if (subscription?.id && subscription?.expirationDateTime) {
                         notificationSubscriptionId = subscription?.id;
                         notificationSubscriptionExpirationDateTime = formatedExpireTime(subscription?.expirationDateTime)
                     }
 
-                //}
+                }
 
-           // }
+            }
             // Update user details
             const userPayload: any = {
                 accessToken: accessToken,
@@ -166,9 +165,9 @@ export class UserService {
                 notificationSubscriptionExpirationDateTime: notificationSubscriptionExpirationDateTime,
                 updateAt: new Date(),
             };
-            await this.updateUser(userId, userPayload);
-            await provider.syncAllMessages(accessToken, userId);
-        //}
+            await this.updateUser(userInfo?._id, userPayload);
+            await provider.syncAllMessages(accessToken, userInfo?._id);
+        }
     }
 
     isAccessTokenExpire(tokenExpires: string): boolean {

@@ -334,7 +334,7 @@ export class OutlookOAuthProvider implements OAuthProvider {
 
             let upsertStatus = {};
             console.log("Messages Sync:Successfully", messages.length);
-            if (messages.length > 0) {
+            
                 await this.messageService.deleteMessage({
                     "query": {
                         "bool": {
@@ -346,7 +346,7 @@ export class OutlookOAuthProvider implements OAuthProvider {
                         }
                     },
                 });
-            }
+            
             await this.mailBoxService.updateMailBoxDetails({
                 userId: userId
             })
