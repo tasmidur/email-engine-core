@@ -10,9 +10,11 @@ import {
 } from "../utils/Constant";
 import {MessageService} from "../services/MessageService";
 import {UserService} from "../services/UserService";
-import {responseMessage} from "../utils/helpers";
+import {formatedExpireTime, isExpire, responseMessage} from "../utils/helpers";
 import {UserUpdate} from "../models/User";
 import {Request, Response} from "express";
+import {publishMessage} from "../socketClient";
+import {MailBoxService} from "../services/MailBoxService";
 
 
 dotenvConfig();
@@ -24,8 +26,9 @@ export class OutlookOAuthProvider implements OAuthProvider {
     private authorizationBaseUrl: string;
     private tokenUrl: string;
     private scope: string;
-    private mssageService: MessageService;
+    private messageService: MessageService;
     private userService: UserService;
+    private mailBoxService: MailBoxService;
 
     constructor() {
         this.clientId = process.env.OUTLOOK_CLIENT_ID || "";
@@ -37,8 +40,9 @@ export class OutlookOAuthProvider implements OAuthProvider {
             "https://login.microsoftonline.com/common/oauth2/v2.0/token";
         this.scope =
             "openid profile email offline_access https://graph.microsoft.com/Mail.Read";
-        this.mssageService = new MessageService();
+        this.messageService = new MessageService();
         this.userService = new UserService();
+        this.mailBoxService = new MailBoxService();
     }
 
     getAuthUrl(userId: string): string {
@@ -74,61 +78,6 @@ export class OutlookOAuthProvider implements OAuthProvider {
         }
     }
 
-    async renewTokenAndSubscription(userId: string): Promise<any> {
-
-        console.log("\n renewTokenAndSubscription worker running for:", userId);
-
-        const {data} = await this.userService.getUserById(userId);
-        const {accessToken, refreshToken, expireIn, notificationSubscriptionId} = data;
-        if (this.userService.isAccessTokenExpire(expireIn)) {
-            const {access_token, refresh_token, expires_in} = await this.refreshAccessToken(refreshToken);
-
-            console.log("RefreshToken:", access_token, refresh_token, expires_in);
-
-            if (access_token && refresh_token && expires_in) {
-
-                const tokenExpires = new Date(
-                    Date.now() + (parseInt(expires_in) - 300) * 1000
-                );
-
-                let userPayload: any = {
-                    accessToken: access_token || "",
-                    refreshToken: refresh_token || "",
-                    expireIn: tokenExpires || new Date(),
-                    updateAt: new Date(),
-                };
-
-                /**
-                 * toSubscribe to OutlookWebhook for real time mail change notifications
-                 */
-                const subscriptionRenew = await this.renewSubscription(
-                    access_token,
-                    notificationSubscriptionId
-                );
-                   console.log("renew subscriptionRenew:", subscriptionRenew)
-                if (subscriptionRenew?.id && subscriptionRenew?.expirationDateTime) {
-                    const subscriptionExpires = new Date(
-                        Date.now() +
-                        (parseInt(subscriptionRenew?.expirationDateTime) - 300) * 1000
-                    );
-                    userPayload = {
-                        ...userPayload,
-                        notificationSubscriptionId: subscriptionRenew?.id,
-                        notificationSubscriptionExpirationDateTime: subscriptionExpires,
-                    };
-                }
-                /**
-                 * updateUser details
-                 */
-                await this.userService.updateUser(userId, userPayload);
-
-                /**
-                 * Renew Subscription
-                 */
-            }
-        }
-    }
-
     async refreshAccessToken(refreshToken: string): Promise<any> {
         try {
             const response = await axios.post(this.tokenUrl, querystring.stringify({
@@ -138,6 +87,7 @@ export class OutlookOAuthProvider implements OAuthProvider {
                 scope: this.scope,
                 client_secret: this.clientSecret,
             }));
+            console.log("refreshAccessToken", response.data)
             return response.data;
         } catch (error: any) {
             console.log("Error:refreshAccessToken", error?.response?.data);
@@ -191,14 +141,17 @@ export class OutlookOAuthProvider implements OAuthProvider {
             /**
              * updateUser details
              */
-            await this.userService.updateUser(userId, userPayload);
+            const updatedUser = await this.userService.updateUser(userId, userPayload);
+
             /**
              * syncAllMessages by access token
              */
             this.syncAllMessages(access_token, userId).then((res) =>
                 console.log("syncAllMessages")
             ).catch((err) => console.log("syncAllMessages:Error:", err));
-            return responseMessage(200, "Outlook account linked successfully");
+            return responseMessage(200, "Outlook account linked successfully", {
+                user: updatedUser?.data
+            });
         } catch (error: any) {
             console.log("\nError:handleOutlookCallback", error)
             throw new Error("\nError:handleOutlookCallback")
@@ -210,7 +163,7 @@ export class OutlookOAuthProvider implements OAuthProvider {
             const subscriptionPayload = {
                 changeType: "created,updated,deleted",
                 notificationUrl: `${process.env.NOTIFICATION_HANDLER_URL}`,
-                resource: `/me/messages`,
+                resource: `/me/mailFolders/inbox/messages`,
                 expirationDateTime: new Date(
                     new Date().getTime() + 3600 * 1000
                 ).toISOString(), // 1 hour from now
@@ -261,31 +214,6 @@ export class OutlookOAuthProvider implements OAuthProvider {
         }
     }
 
-    async handleNotification(req: Request, res: Response): Promise<any> {
-        try {
-            if (req.query && req.query.validationToken) {
-                res.send(req.query.validationToken);
-                return;
-            }
-            const {value} = req.body;
-            for (const notification of value) {
-                let userId = notification?.clientState;
-                let messageId = notification?.resourceData?.id;
-
-                if (userId) {
-                    let user = await this.userService.getUserById(userId);
-                    await this.syncMessage(user?.data?.accessToken, messageId, userId);
-                    console.log(messageId);
-                }
-            }
-
-            console.log(responseMessage(200, "Outlook notification handle successful"));
-
-        } catch (error: any) {
-            console.log("Error:handleNotification", error?.response);
-        }
-    }
-
     async getUserInfo(accessToken: string): Promise<any> {
         try {
             const response = await axios.get("https://graph.microsoft.com/v1.0/me", {
@@ -305,7 +233,7 @@ export class OutlookOAuthProvider implements OAuthProvider {
     }
 
     async getUserMail(accessToken: string, id?: string): Promise<any> {
-        let url = "https://graph.microsoft.com/v1.0/me/messages";
+        let url = "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages";
         if (id) {
             url += `/${id}`;
         }
@@ -326,9 +254,9 @@ export class OutlookOAuthProvider implements OAuthProvider {
 
     async syncMessage(accessToken: string, messageId: string, userId: string) {
         try {
-            const updateMessage = await this.getUserMail(accessToken, messageId);
-            if (updateMessage?.status === 200 && updateMessage?.data) {
-                const _item = updateMessage?.data ?? {};
+            const updatedMessage = await this.getUserMail(accessToken, messageId);
+            if (updatedMessage?.status === 200 && updatedMessage?.data) {
+                const _item = updatedMessage?.data ?? {};
                 const syncMessagePayload = {
                     messageId: _item.id,
                     userId: userId,
@@ -345,21 +273,30 @@ export class OutlookOAuthProvider implements OAuthProvider {
                         address: _item.sender?.emailAddress?.address,
                     },
                     receiver: {
-                        name: _item.toRecipients[0]?.emailAddress?.name,
-                        address: _item.toRecipients[0]?.emailAddress?.address,
+                        name: _item.from?.emailAddress?.name,
+                        address: _item.from?.emailAddress?.address,
                     },
+                    createAt: _item?.sentDateTime || new Date(),
+                    updateAt: _item?.lastModifiedDateTime || new Date(),
                 };
-                await this.mssageService.syncMessages([syncMessagePayload]);
-                console.log("Message Sync:Successfull", syncMessagePayload.messageId);
+                console.log("updatedMessage", updatedMessage)
+                console.log("syncMessagePayload", syncMessagePayload)
+                await this.messageService.syncMessages([syncMessagePayload]);
+                await this.mailBoxService.updateMailBoxDetails({
+                    userId: userId
+                })
+                console.log("Message Sync:Successfully", syncMessagePayload.messageId);
             }
         } catch (error: any) {
             console.log("Message Sync:Fail");
         }
     }
 
-    async syncAllMessages(accessToken: string, userId: string): Promise<void> {
+    async syncAllMessages(accessToken: string, userId: string): Promise<any> {
         try {
-            let nextLink = `https://graph.microsoft.com/v1.0/me/messages`;
+            let nextLink = `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages`;
+            let messages: any[] = [];
+
             while (nextLink) {
                 const response = await axios.get(nextLink, {
                     headers: {
@@ -367,7 +304,7 @@ export class OutlookOAuthProvider implements OAuthProvider {
                     },
                 });
                 let userRefId = userId;
-                let messages = response.data.value?.map((_item: any) => ({
+                let messageChunk = response.data.value?.map((_item: any) => ({
                     messageId: _item.id,
                     userId: userRefId,
                     subject: _item.subject,
@@ -376,6 +313,7 @@ export class OutlookOAuthProvider implements OAuthProvider {
                     conversationId: _item.conversationId,
                     body: _item.body,
                     isRead: _item.isRead,
+                    isFlagged: _item.flag?.flagStatus === "flagged",
                     isDraft: _item.isDraft,
                     messageType: this.getMessageType(_item),
                     sender: {
@@ -386,11 +324,33 @@ export class OutlookOAuthProvider implements OAuthProvider {
                         name: _item.toRecipients[0]?.emailAddress?.name,
                         address: _item.toRecipients[0]?.emailAddress?.address,
                     },
+                    createAt: _item?.sentDateTime || new Date(),
+                    updateAt: _item?.lastModifiedDateTime || new Date(),
                 }));
-                await this.mssageService.syncMessages(messages);
+                messages = [...messages, ...messageChunk];
+                await this.messageService.syncMessages(messageChunk)
                 nextLink = response.data["@odata.nextLink"];
             }
-            console.log("Messages sync:Success");
+
+            let upsertStatus = {};
+            console.log("Messages Sync:Successfully", messages.length);
+            if (messages.length > 0) {
+                await this.messageService.deleteMessage({
+                    "query": {
+                        "bool": {
+                            "must_not": {
+                                "terms": {
+                                    "messageId": messages.map((item) => item.messageId)
+                                }
+                            }
+                        }
+                    },
+                });
+            }
+            await this.mailBoxService.updateMailBoxDetails({
+                userId: userId
+            })
+            return upsertStatus;
         } catch (error: any) {
             console.log(`\nMessages Sync:Fail:${JSON.stringify(error?.response?.data, null, 2)}`);
             throw new Error(`\nMessages Sync:Fail:${JSON.stringify(error?.response?.data, null, 2)}`);

@@ -1,10 +1,10 @@
-import {ElasticSearchService} from "./ElasticSearchService";
 import {MAIL_MESSAGE_INDEX} from "../utils/Constant";
 import {responseMessage} from "../utils/helpers";
 import {MessageSchema} from "../models/Message";
-import {log} from "console";
+import {ElasticSearchClient} from "../ElasticSearchClient";
+import {query} from "express";
 
-const elasticSearchClient = new ElasticSearchService();
+const elasticSearchClient = new ElasticSearchClient();
 
 export class MessageService {
     private indexName: string = MAIL_MESSAGE_INDEX;
@@ -13,7 +13,6 @@ export class MessageService {
         elasticSearchClient
             .createIndex(this.indexName, MessageSchema)
             .then((res) => {
-
             });
     }
 
@@ -49,13 +48,33 @@ export class MessageService {
         }
     }
 
-    async syncMessages(messages: any[]): Promise<void> {
+    async deleteMessage(query:object): Promise<any> {
+        try {
+            const response = await elasticSearchClient.deleteDocument(
+                this.indexName,
+                {
+                    ...query
+                }
+            );
+            return responseMessage(
+                200,
+                "Message deleted successfully",
+                response
+            );
+        } catch (error) {
+            return responseMessage(500, "Error creating message");
+        }
+    }
+
+    async syncMessages(messages: any[]): Promise<any> {
         let operations: any[] = [];
         for (let doc of messages) {
             let query = {
-                match: {
-                    messageId: doc.messageId,
-                },
+                query:{
+                    match: {
+                        messageId: doc.messageId,
+                    }
+                }
             };
             let existingDoc = await elasticSearchClient.searchDocuments(
                 this.indexName,
@@ -71,8 +90,9 @@ export class MessageService {
             } else {
                 operations.push({index: {_index: this.indexName}}, doc);
             }
+
         }
-        await elasticSearchClient.bulkUpsert(operations);
-        console.log("sync message......");
+        // console.log("operations", JSON.stringify(operations, null, 2));
+        return await elasticSearchClient.bulkUpsert(operations);
     }
 }

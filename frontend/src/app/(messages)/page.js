@@ -12,7 +12,7 @@ import io from 'socket.io-client';
 import {useAuth} from "@/contexts/AuthContext";
 import {Divider, Paper, Stack, styled} from "@mui/material";
 
-const DemoPaper = styled(Paper)(({ theme }) => ({
+const DemoPaper = styled(Paper)(({theme}) => ({
     width: 200,
     height: 50,
     padding: theme.spacing(2),
@@ -26,7 +26,6 @@ export default function MessagePage() {
     const [messages, setMessages] = useState({});
     const [mailBox, setMailBox] = useState({});
     const [socketMessage, setSocketMessage] = useState({});
-    const [muted, setMuted] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const {user} = useAuth()
 
@@ -37,31 +36,34 @@ export default function MessagePage() {
 
     const fetcher = useCallback(async () => {
         setIsLoading(true);
-        await fetchMailBox();
         await fetchMessages();
+        await fetchMailBox();
         setIsLoading(false);
-    }, [filter,socketMessage]);
+    }, [filter, socketMessage]);
 
     useEffect(() => {
         fetcher();
     }, [fetcher]);
 
     useEffect(() => {
-        // Listen for incoming messages from the server
         if (user?.id) {
             socket.on(user?.id, (newMessage) => {
-                console.log(newMessage)
-                console.log(`New message from Socket...`,user?.id)
                 notify(`New message from Socket...`, NOTIFY_MESSAGE_ERROR)
                 setSocketMessage(JSON.parse(newMessage));
             });
-
-            // Cleanup on unmount
             return () => {
                 socket.off(user?.id);
             };
         }
     }, [user?.id]);
+
+    const handlePageSizeChange = (pageSize) => {
+        setFilter((prevState) => ({...prevState, size: pageSize}));
+    };
+
+    const handlePageChange = (page) => {
+        setFilter((prevState) => ({...prevState, from: Number(page)-1}));
+    };
 
     const fetchMessages = async () => {
         const response = await apiClient.get(apiEndpoint.messages, {
@@ -77,7 +79,7 @@ export default function MessagePage() {
     const fetchMailBox = async () => {
         const response = await apiClient.get(apiEndpoint.mailBox);
         if (response.status === HTTP_OK) {
-            setMailBox(response.data[0]??{});
+            setMailBox(response.data[0] ?? {});
         } else {
             notify(`Something went wrong`, NOTIFY_MESSAGE_ERROR)
         }
@@ -111,7 +113,8 @@ export default function MessagePage() {
                     <MessageList
                         isLoading={isLoading}
                         rows={messages}
-                        handleAction={handleAction}
+                        handlePageSizeChange={handlePageSizeChange}
+                        handlePageChange={handlePageChange}
                     />
                 </Box>
             </Box>
