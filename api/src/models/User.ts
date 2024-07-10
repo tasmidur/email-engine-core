@@ -12,6 +12,7 @@ export interface User {
     expireIn: Date;
     notificationSubscriptionId: string,
     notificationSubscriptionExpirationDateTime: Date,
+    notificationCallBackUrl:string,
     createAt: Date;
     updateAt: Date;
 }

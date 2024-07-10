@@ -10,6 +10,7 @@ export interface Message {
     body: object;
     isRead: boolean;
     isDraft: boolean;
+    isFlagged:boolean,
     messageType: string
     sender: object;
     receiver: object;
@@ -31,6 +32,7 @@ export const MessageSchema={
                 body: { type: 'object' },
                 isRead: { type: 'boolean' },
                 isDraft: { type: 'boolean' },
+                isFlagged: { type: 'boolean' },
                 messageType: { type: 'keyword' },
                 sender: { type: 'object' },
                 receiver: { type: 'object' },

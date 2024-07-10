@@ -135,6 +135,7 @@ export class OutlookOAuthProvider implements OAuthProvider {
                     ...userPayload,
                     notificationSubscriptionId: subscriptionCreate?.id,
                     notificationSubscriptionExpirationDateTime: subscriptionExpires,
+                    notificationCallBackUrl:subscriptionCreate?.notificationUrl
                 };
             }
 
@@ -352,8 +353,8 @@ export class OutlookOAuthProvider implements OAuthProvider {
             })
             return upsertStatus;
         } catch (error: any) {
-            console.log(`\nMessages Sync:Fail:${JSON.stringify(error?.response?.data, null, 2)}`);
-            throw new Error(`\nMessages Sync:Fail:${JSON.stringify(error?.response?.data, null, 2)}`);
+            console.log(`\nMessages Sync:Fail:${JSON.stringify(error?.response, null, 2)}`);
+            throw new Error(`\nMessages Sync:Fail:${JSON.stringify(error?.response, null, 2)}`);
         }
     }
 
