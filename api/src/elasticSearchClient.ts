@@ -74,6 +74,7 @@ export class ElasticSearchClient {
             return this.getDocument(index, response.body._id);
         } catch (error) {
             console.error("Error indexing document:", error);
+            throw new Error("Error indexing document")
         }
     }
 
@@ -92,6 +93,7 @@ export class ElasticSearchClient {
             return response.body || {};
         } catch (error) {
             console.error("Error retrieving document:", error);
+            throw new Error("Error retrieving document");
         }
     }
 

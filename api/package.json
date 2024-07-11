@@ -8,10 +8,6 @@
     "start": "node dist/app.js",
     "build": "tsc",
     "watch": "tsc -w",
-    "docker:build": "docker-compose build",
-    "docker:up": "docker-compose up",
-    "docker:down": "docker-compose down",
-    "docker:restart": "npm run docker:down && npm run docker:up",
     "jwt:secret": "node -e \"console.log(require('crypto').randomBytes(64).toString('base64'))\""
   },
   "author": "Your Name",

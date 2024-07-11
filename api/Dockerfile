@@ -1,21 +1,21 @@
 # Dockerfile
-FROM node:18-alpine
+FROM node:18
 
 # Create app directory
-WORKDIR /usr/src/app
+WORKDIR /app
 
 # Install app dependencies
 COPY package*.json ./
-RUN npm install
+RUN yarn install
 
 # Bundle app source
-COPY . .
+COPY .. .
 
 # Copy environment variables
 COPY .env .env
 
 # Build the TypeScript code
-RUN npm run build
+RUN yarn run build
 
 # Expose port
 EXPOSE 3000

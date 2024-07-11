@@ -2,21 +2,29 @@
 version: '3.8'
 
 services:
-  # app:
-  #   build: .
-  #   ports:
-  #     - '3000:3000'
-  #   depends_on:
-  #     - elasticsearch
-  #   environment:
-  #     - OUTLOOK_CLIENT_ID=${OUTLOOK_CLIENT_ID}
-  #     - OUTLOOK_CLIENT_SECRET=${OUTLOOK_CLIENT_SECRET}
-  #     - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST}
-  #     - JWT_SECRET=${JWT_SECRET}
-  #   volumes:
-  #     - .:/usr/src/app
-  #     - /usr/src/app/node_modules
-  #   command: npm start
+  api-server:
+    build: ./api
+    ports:
+      - '3000:3000'
+    depends_on:
+      - elasticsearch
+    env_file:
+      - ./api/.env
+    volumes:
+      - .:/app/api
+      - /app/api/node_modules
+
+  frontend-app:
+    build: ./frontend
+    ports:
+      - '3001:3000'
+    depends_on:
+      - api-server
+    env_file:
+      - ./frontend/.env
+    volumes:
+      - .:/app/frontend
+      - /app/frontend/node_modules
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1

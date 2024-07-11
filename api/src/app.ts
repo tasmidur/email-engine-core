@@ -2,20 +2,21 @@
  * The main application file
  */
 
-import express, {Request, Response, NextFunction} from 'express'; // Import Express.js framework
-import bodyParser from 'body-parser'; // Import body-parser middleware
-import authRoutes from './routes/auth'; // Import authentication routes
-import messageRouters from './routes/message'; // Import message routes
-import cors from 'cors'; // Import CORS middleware
-import * as dotenv from 'dotenv'; // Import dotenv module
-import {scheduleCronJob} from './cron'; // Import scheduleCronJob function
-import {UserService} from './services/UserService'; // Import UserService
-import {OutlookOAuthProvider} from './providers/OutlookOAuthProvider'; // Import OutlookOAuthProvider
-import {ElasticSearchClient} from './elasticSearchClient'; // Import ElasticSearchClient
-import {UserSchema} from './models/User'; // Import UserSchema
-import {MessageSchema} from './models/Message'; // Import MessageSchema
-import {MailBoxSchema} from './models/MailBox'; // Import MailBoxSchema
-import {ErrorMiddleware} from './middleware/ErrorMiddleware'; // Import ErrorMiddleware
+import express from 'express';
+import bodyParser from 'body-parser';
+import authRoutes from './routes/auth';
+import messageRouters from './routes/message';
+import cors from 'cors';
+import * as dotenv from 'dotenv';
+import {scheduleCronJob} from './cron';
+import {UserService} from './services/UserService';
+import {OutlookOAuthProvider} from './providers/OutlookOAuthProvider';
+import {ElasticSearchClient} from './elasticSearchClient';
+import {UserSchema} from './models/User';
+import {MessageSchema} from './models/Message';
+import {MailBoxSchema} from './models/MailBox';
+import ErrorMiddleware from "./middleware/ErrorMiddleware";
+
 
 /**
  * Load environment variables from .env file

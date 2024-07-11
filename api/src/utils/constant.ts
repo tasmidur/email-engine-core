@@ -5,8 +5,8 @@
 /**
  * Index names for Outlook data
  */
-export const MAIL_MESSAGE_INDEX = 'index_messages_2';
-export const MAILBOX_INDEX = 'index_mailbox_2';
+export const MAIL_MESSAGE_INDEX = 'index_messages1';
+export const MAILBOX_INDEX = 'index_mailbox1';
 export const USER_INDEX = 'outlook_index_users1';
 
 /**

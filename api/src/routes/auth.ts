@@ -11,65 +11,81 @@ const router = Router();
 const userService = new UserService();
 const oauthContext = new OAuthContext(new OutlookOAuthProvider());
 
-router.get("/user", SessionMiddleware, async (req: Request, res: Response) => {
-    const {user} = req as any;
-    const response = await userService.getUserById(user.id);
+router.get("/user", SessionMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const {user} = req as any;
+        const response = await userService.getUserById(user.id);
 
-    if (response.status !== 200) {
-        return res.status(500).json(response);
-    }
+        if (response.status !== 200) {
+            return res.status(403).json(response);
+        }
 
-    if (response?.data?.accessToken && isExpire(response?.data.expireIn)) {
-        return res.status(403).json({
-            message: "Forbidden",
+        if (response?.data?.accessToken && isExpire(response?.data.expireIn)) {
+            return res.status(403).json({
+                message: "Forbidden",
+            });
+        }
+
+        res.json({
+            status: 200,
+            message: "User fetch success",
+            data: {
+                id: response.data.id,
+                username: response.data.username
+            },
+        });
+    } catch (error: any) {
+        console.log("error", error);
+        res.status(401).json({
+            message: "Unauthorized",
         });
     }
-
-    res.json({
-        status: 200,
-        message: "User fetch success",
-        data: {
-            id: response.data.id,
-            username: response.data.username
-        },
-    });
 });
 
 
 /**
  * User Register Handler
  */
-router.post("/register", async (req: Request, res: Response) => {
-    const {username, password} = req.body;
-    const response = await userService.createUser(username, password);
+router.post("/register", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const {username, password} = req.body;
+        const response = await userService.createUser(username, password);
 
-    if (response.status !== 200) {
-        return res.status(500).json(response);
+        if (response.status !== 200) {
+            return res.status(500).json(response);
+        }
+        res.json({
+            status: 200,
+            message: "User created successfully",
+            data: {
+                id: response.data.id,
+                username: response.data.username,
+                redirectUrl: `${process.env.APP_URL}/auth/link/outlook/${response.data.id}`
+            },
+        });
+    } catch (error: any) {
+        console.log("error", error);
+        next(error);
     }
-    res.json({
-        status: 200,
-        message: "User created successfully",
-        data: {
-            id: response.data.id,
-            username: response.data.username,
-            redirectUrl: `${process.env.APP_URL}/auth/link/outlook/${response.data.id}`
-        },
-    });
 });
 
-router.get("/link/:provider/:userId", (req: Request, res: Response) => {
-    const {provider: providerType, userId} = req.params;
-    if (providerType == PROVIDER_TYPE_OUTLOOK) {
-        const authorizationUrl = oauthContext.getAuthUrl(userId);
-        res.redirect(authorizationUrl);
+router.get("/link/:provider/:userId", (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const {provider: providerType, userId} = req.params;
+        if (providerType == PROVIDER_TYPE_OUTLOOK) {
+            const authorizationUrl = oauthContext.getAuthUrl(userId);
+            res.redirect(authorizationUrl);
+        }
+    } catch (error: any) {
+        console.log("error", error);
+        next(error);
     }
-
 });
 
 /**
  * Provider callback handler
  */
-router.get("/:provider/callback", async (req: Request, res: Response) => {
+router.get("/:provider/callback", async (req: Request, res: Response, next: NextFunction) => {
 
     const providerType: string = req.params.provider
     try {
@@ -104,7 +120,7 @@ router.get("/:provider/callback", async (req: Request, res: Response) => {
         }
     } catch (error: any) {
         console.log("error", error);
-        res.status(400).json(responseMessage(400, error.message))
+        next(error)
     }
 });
 

@@ -7,6 +7,7 @@ import {UserService} from "../services/UserService";
 import {responseMessage} from "../utils/helpers";
 import {UserUpdate} from "../models/User";
 import {MailBoxService} from "../services/MailBoxService";
+import {publishMessage} from "../socketClient";
 
 export class OutlookOAuthProvider implements IOAuthProvider {
     private clientId: string;
@@ -61,8 +62,8 @@ export class OutlookOAuthProvider implements IOAuthProvider {
             });
             return responseMessage(200, "Successfully fetch tokens", response.data);
         } catch (error: any) {
-            console.log("Error:getTokenFromCode", error?.response);
-            throw new Error(`Error:getTokenFromCode:${JSON.stringify(error?.response, null, 2)}`);
+            console.log("Error:getTokenFromCode", error?.response?.data);
+            throw new Error(`Error:getTokenFromCode`);
         }
     }
 
@@ -77,8 +78,8 @@ export class OutlookOAuthProvider implements IOAuthProvider {
             }));
             return response.data;
         } catch (error: any) {
-            console.log("Error:refreshAccessToken", error?.response);
-            throw new Error(`Error:refreshAccessToken:${JSON.stringify(error?.response, null, 2)}`);
+            console.log("Error:refreshAccessToken", error?.response?.data);
+            throw new Error(`Error:refreshAccessToken`);
         }
     }
 
@@ -108,7 +109,7 @@ export class OutlookOAuthProvider implements IOAuthProvider {
             /**
              * toSubscribe to OutlookWebhook for real time mail change notifications
              */
-            const subscriptionCreate = await this.toSubscribe(
+            const subscriptionCreate = await this.subscriptionForNotification(
                 access_token,
                 userId
             );
@@ -142,8 +143,8 @@ export class OutlookOAuthProvider implements IOAuthProvider {
                 user: updatedUser?.data
             });
         } catch (error: any) {
-            console.log("Error:handleOutlookCallback", error?.response)
-            throw new Error(`Error:handleOutlookCallback:${JSON.stringify(error?.response, null, 2)}`);
+            console.log("Error:handleOutlookCallback", error?.response?.data)
+            throw new Error(`Error:handleOutlookCallback`);
         }
     }
 
@@ -151,15 +152,18 @@ export class OutlookOAuthProvider implements IOAuthProvider {
         for (const notification of values) {
             let userId = notification?.clientState;
             if (userId) {
-                let user: any = this.userService.getUserById(userId);
+                let user: any = await this.userService.getUserById(userId);
                 if (user?.data?.notificationSubscriptionId === notification?.subscriptionId) {
-                    this.syncAllMessages(user?.data?.accessToken, userId).then(res => console.log("sync message......"))
+                    this.syncAllMessages(user?.data?.accessToken, userId).then(res => {
+                        console.log("sync message......")
+                        publishMessage(userId, {message: "sync message......"})
+                    })
                 }
             }
         }
     }
 
-    async toSubscribe(accessToken: string, userId: string): Promise<any> {
+    async subscriptionForNotification(accessToken: string, userId: string): Promise<any> {
         try {
             const subscriptionPayload = {
                 changeType: "created,updated,deleted",
@@ -183,12 +187,13 @@ export class OutlookOAuthProvider implements IOAuthProvider {
             );
             return response.data;
         } catch (error: any) {
-            console.log("Error:toSubscribe:", error?.response);
-            throw new Error(`Error:toSubscribe:${JSON.stringify(error?.response, null, 2)}`);
+            console.log("Error:toSubscribe:", error?.response?.data);
+            //throw new Error(`Error:toSubscribe`);
         }
     }
 
-    async renewSubscription(accessToken: string, subscriptionId: string): Promise<any> {
+    async renewSubscriptionForNotification(accessToken: string, subscriptionId: string): Promise<any> {
+        console.log("\nsub", accessToken, subscriptionId)
         try {
             const subscriptionPayload = {
                 expirationDateTime: new Date(
@@ -208,8 +213,7 @@ export class OutlookOAuthProvider implements IOAuthProvider {
             );
             return response.data;
         } catch (error: any) {
-            console.log("Error:renewSubscription", error);
-            throw new Error(`Error:renewSubscription:${JSON.stringify(error?.response, null, 2)}`);
+            console.log("Error:renewSubscription", error?.response?.data);
         }
     }
 
@@ -226,7 +230,6 @@ export class OutlookOAuthProvider implements IOAuthProvider {
             );
         } catch (error: any) {
             console.log("Error:getUserInfo", error?.response);
-            throw new Error(`Error:getUserInfo:${JSON.stringify(error?.response, null, 2)}`);
         }
     }
 
@@ -244,8 +247,7 @@ export class OutlookOAuthProvider implements IOAuthProvider {
             });
             return responseMessage(200, "success", response?.data);
         } catch (error: any) {
-            console.log("Error:getUserMail", error?.response);
-            throw new Error(`Error:getUserMail:${JSON.stringify(error?.response, null, 2)}`);
+            console.log("Error:getUserMail", error?.response?.data);
         }
     }
 
@@ -255,7 +257,11 @@ export class OutlookOAuthProvider implements IOAuthProvider {
             let messages: any[] = [];
 
             while (nextLink) {
-                const response = await this.getUserMail(accessToken, nextLink);
+                const response = await axios.get(nextLink, {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                });
                 let userRefId = userId;
                 let messageChunk = response.data.value?.map((_item: any) => ({
                     messageId: _item.id,
@@ -281,7 +287,6 @@ export class OutlookOAuthProvider implements IOAuthProvider {
                     updateAt: _item?.lastModifiedDateTime || new Date(),
                 }));
                 messages = [...messages, ...messageChunk];
-                await this.messageService.bulkUpsertMessages(messageChunk)
                 nextLink = response.data["@odata.nextLink"];
             }
 
@@ -301,13 +306,13 @@ export class OutlookOAuthProvider implements IOAuthProvider {
                 }
             });
 
+            await this.messageService.bulkUpsertMessages(messages);
             await this.mailBoxService.updateMailBoxDetails({
                 userId: userId
             })
             return upsertStatus;
         } catch (error: any) {
-            console.log(`Messages Sync:Fail:${JSON.stringify(error?.response, null, 2)}`);
-            throw new Error(`Messages Sync:Fail:${JSON.stringify(error?.response, null, 2)}`);
+            console.log(`Messages Sync:Fail:${JSON.stringify(error?.response?.data, null, 2)}`);
         }
     }
 

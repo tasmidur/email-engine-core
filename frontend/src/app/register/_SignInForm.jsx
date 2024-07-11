@@ -56,7 +56,7 @@ const SignInForm = () => {
                     <Typography variant="h5" align="center" component={"div"} sx={{
                         marginTop: '10px'
                     }}>
-                        Register
+                        Sing In/Sing Up
                     </Typography>
                     <Formik
                         initialValues={initialValues}
@@ -171,7 +171,7 @@ const SignInForm = () => {
                                                         fontSize: '80%',
                                                     }}
                                                 >
-                                                    Register
+                                                    Submit
                                                 </Button>
                                             </Grid>
                                         </Grid>

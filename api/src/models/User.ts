@@ -3,7 +3,7 @@ import {USER_INDEX} from "../utils/constant";
 export interface User {
     username: string;
     password: string;
-    providerType: "outlook" | "gmail" | "yahoo" | "hotmail" | "other";
+    providerType: string;
     emailAddress: string;
     displayName: string;
     identityKey: string; // mail id
@@ -24,14 +24,14 @@ export interface UserCreate extends Partial<User> {
 }
 
 export interface UserUpdate extends Partial<User> {
-    providerType: "outlook" | "gmail" | "yahoo" | "hotmail" | "other";
+    providerType?: string,
     emailAddress?: string;
     displayName?: string;
     identityKey?: string; // mail id
     accessToken?: string;
     refreshToken?: string;
     expireIn?: Date;
-    updateAt: Date;
+    updateAt?: Date;
 }
 
 export interface JwtTokenPayload {
@@ -44,8 +44,8 @@ export const UserSchema = {
     index: USER_INDEX,
     body: {
         settings: {
-                number_of_shards: 2,    // Adjust the number of primary shards
-                number_of_replicas: 1   // Adjust the number of replica shards
+            number_of_shards: 2,    // Adjust the number of primary shards
+            number_of_replicas: 1   // Adjust the number of replica shards
         },
         mappings: {
             properties: {
