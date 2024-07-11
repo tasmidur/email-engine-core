@@ -1,15 +1,15 @@
-import {Router, Request, Response} from "express";
+import {Router, Request, Response, NextFunction} from "express";
 import {UserService} from "../services/UserService";
-import {PROVIDER_TYPE_OUTLOOK} from "../utils/Constant";
+import {PROVIDER_TYPE_OUTLOOK} from "../utils/constant";
 import {isExpire, responseMessage} from "../utils/helpers";
 import {OutlookOAuthProvider} from '../providers/OutlookOAuthProvider';
 import {JwtTokenPayload} from "../models/User";
-import {SessionMiddleware} from "../middleware/SessionMiddleWare";
-import {publishMessage} from "../socketClient";
+import {SessionMiddleware} from "../middleware/SessionMiddleware";
+import {OAuthContext} from "../providers/OAuthContext";
 
 const router = Router();
 const userService = new UserService();
-const outlookOAuthProvider = new OutlookOAuthProvider();
+const oauthContext = new OAuthContext(new OutlookOAuthProvider());
 
 router.get("/user", SessionMiddleware, async (req: Request, res: Response) => {
     const {user} = req as any;
@@ -60,7 +60,7 @@ router.post("/register", async (req: Request, res: Response) => {
 router.get("/link/:provider/:userId", (req: Request, res: Response) => {
     const {provider: providerType, userId} = req.params;
     if (providerType == PROVIDER_TYPE_OUTLOOK) {
-        const authorizationUrl = outlookOAuthProvider.getAuthUrl(userId);
+        const authorizationUrl = oauthContext.getAuthUrl(userId);
         res.redirect(authorizationUrl);
     }
 
@@ -76,7 +76,7 @@ router.get("/:provider/callback", async (req: Request, res: Response) => {
         if (providerType == PROVIDER_TYPE_OUTLOOK) {
             const code = req.query.code as string;
             const userId = req.query.state as string;
-            const {data: {user}} = await outlookOAuthProvider.handleOutlookCallback(code, userId)
+            const {data: {user}} = await oauthContext.handleCallback(code, userId)
             if (user) {
                 console.log(`Successfully handle ${providerType} callback`);
                 const jwtTokenPayload: JwtTokenPayload = {
@@ -111,41 +111,24 @@ router.get("/:provider/callback", async (req: Request, res: Response) => {
 /**
  * Handle real-time notifications
  */
-router.post("/:provider/notifications", async (req, res) => {
-    const {provider: providerType} = req.params
+router.post("/:provider/notifications", async (req: Request, res: Response, next: NextFunction) => {
     try {
-        if (req.query && req.query.validationToken) {
-            res.send(req.query.validationToken);
+        if (req?.query && req?.query?.validationToken) {
+            res.send(req?.query?.validationToken);
             return;
         }
+
+        const {provider: providerType} = req.params
+
         if (providerType == PROVIDER_TYPE_OUTLOOK) {
             const {value} = req.body;
-            for (const notification of value) {
-                let userId = notification?.clientState;
-                let messageId = notification?.resourceData?.id;
-                if (userId) {
-                    let user = await userService.getUserById(userId);
-                    console.log("same id",user?.data?.notificationSubscriptionId === notification?.subscriptionId);
-                    
-                    if (user?.data?.notificationSubscriptionId === notification?.subscriptionId) {
-
-                        outlookOAuthProvider.syncAllMessages(user?.data?.accessToken, userId).then(res => {
-                           console.log("sync message......");
-                            publishMessage(userId, {
-                                userId,
-                                messageId
-                            });
-                        })
-
-                    }
-                }
-            }
+            await oauthContext.handleNotificationCallback(value);
         }
         console.log(`Successfully handle ${providerType} notification callback`);
         res.sendStatus(202);
     } catch (error: any) {
         console.log("error", error);
-        res.status(400).json(responseMessage(400, error.message))
+        next(error);
     }
 });
 

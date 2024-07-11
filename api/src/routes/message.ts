@@ -1,8 +1,8 @@
 import {Request, Response, Router} from 'express';
 import {MessageService} from "../services/MessageService";
-import {SessionMiddleware} from "../middleware/SessionMiddleWare";
 import {responseMessage} from "../utils/helpers";
 import {MailBoxService} from "../services/MailBoxService";
+import {SessionMiddleware} from "../middleware/SessionMiddleware";
 
 const router = Router();
 const messageService = new MessageService();

@@ -1,4 +1,4 @@
-import {USER_INDEX} from "../utils/Constant";
+import {USER_INDEX} from "../utils/constant";
 
 export interface User {
     username: string;
@@ -12,7 +12,7 @@ export interface User {
     expireIn: Date;
     notificationSubscriptionId: string,
     notificationSubscriptionExpirationDateTime: Date,
-    notificationCallBackUrl:string,
+    notificationCallBackUrl: string,
     createAt: Date;
     updateAt: Date;
 }
@@ -43,6 +43,10 @@ export interface JwtTokenPayload {
 export const UserSchema = {
     index: USER_INDEX,
     body: {
+        settings: {
+                number_of_shards: 2,    // Adjust the number of primary shards
+                number_of_replicas: 1   // Adjust the number of replica shards
+        },
         mappings: {
             properties: {
                 username: {type: "keyword"},

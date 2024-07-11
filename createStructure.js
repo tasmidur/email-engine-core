@@ -14,7 +14,7 @@ const files = [
     'src/models/User.ts',
     'src/routes/auth.ts',
     'src/services/UserService.ts',
-    'src/ElasticSearchClient.ts',
+    'src/elasticSearchClient.ts',
     'src/app.ts'
 ];
 
