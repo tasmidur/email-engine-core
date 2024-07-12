@@ -23,7 +23,7 @@ Go to Azure Portal:
 Pull from git:
 
 ```bash
-   git pull origin tasmidur/
+  https://github.com/tasmidur/email-engine-core.git
 ```
 ## Backend Setup:
 The backend api expose by port:3000
