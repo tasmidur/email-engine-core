@@ -17,7 +17,7 @@ Step 1: Steps to Access User Messages from Outlook
 Go to Azure Portal:
 1. Navigate to the [Azure Portal](https://portal.azure.com/)
 2. Go to "Azure Active Directory" > "App registrations" > Press New Registration button for app registration
-3. Set Delegated type API Permissions : `Mail.Read`,`offline_access`,`openid`,`profile`,`User.Read`,
+3. Set Delegated type API Permissions: `Mail.Read`,`offline_access`,`openid`,`profile`,`User.Read`,
 
 ## Project Setup:
 Pull from git:
@@ -26,7 +26,7 @@ Pull from git:
   https://github.com/tasmidur/email-engine-core.git
 ```
 ## Backend Setup:
-The backend api expose by port:3000
+The backend api exposed by port:3000
 
 Modify env file:
 
@@ -62,7 +62,7 @@ OUTLOOK_TENANT_ID=your_outlook_tenant_id
 # The tenant type for Outlook OAuth authentication (common or tenant ID)
 OUTLOOK_TENANT=common
 
-# Set a Outlook Redirect URL to registered app
+# Set an Outlook Redirect URL to the registered app
 # The URL to redirect to after Outlook OAuth authentication
 OUTLOOK_REDIRCT_URL=http://localhost:8080/auth/outlook/callback
 
