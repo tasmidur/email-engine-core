@@ -1,24 +1,30 @@
-# Dockerfile
 FROM node:18
 
-# Create app directory
 WORKDIR /app
 
-# Install app dependencies
+# Copy package.json and package-lock.json
 COPY package*.json ./
-RUN yarn install
 
-# Bundle app source
-COPY .. .
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application code
+COPY . .
 
 # Copy environment variables
 COPY .env .env
 
-# Build the TypeScript code
-RUN yarn run build
+# Build the application
+RUN npm run build
 
-# Expose port
+# Install dockerize
+RUN apt-get update && apt-get install -y wget && \
+    wget -O /usr/local/bin/dockerize https://github.com/jwilder/dockerize/releases/download/v0.6.1/dockerize-linux-amd64-v0.6.1.tar.gz && \
+    tar -C /usr/local/bin -xzvf /usr/local/bin/dockerize && \
+    chmod +x /usr/local/bin/dockerize
+
 EXPOSE 3000
+EXPOSE 3019
 
-# Command to run the app
-CMD [ "node", "dist/app.js" ]
+# Command to run the application
+CMD ["dockerize", "-wait", "tcp://elasticsearch:9200", "-timeout", "60s", "node", "dist/app.js"]

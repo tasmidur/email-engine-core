@@ -4,6 +4,7 @@
 import { MAIL_MESSAGE_INDEX, MAILBOX_INDEX } from "../utils/constant";
 import { responseMessage } from "../utils/helpers";
 import { ElasticSearchClient } from "../elasticSearchClient";
+import { MailBoxSchema } from "../models/MailBox";
 
 /**
  * Creating an instance of ElasticSearchClient
@@ -18,6 +19,13 @@ export class MailBoxService {
      * Index name for mailbox documents.
      */
     private indexName: string = MAILBOX_INDEX;
+
+    constructor(){
+        elasticSearchClient.initElasticsearch([
+            MailBoxSchema
+        ]).then((res: any) => console.log("Elasticsearch MailBoxSchema initialized")).catch((err: any) => console.log(err));
+    }
+
 
     /**
      * Updates mailbox details for a given user ID.

@@ -4,6 +4,7 @@
 import { MAIL_MESSAGE_INDEX } from "../utils/constant";
 import { responseMessage } from "../utils/helpers";
 import { ElasticSearchClient } from "../elasticSearchClient";
+import { MessageSchema } from "../models/Message";
 
 /**
  * Creating an instance of ElasticSearchClient
@@ -18,6 +19,12 @@ export class MessageService {
      * Index name for message documents.
      */
     private indexName: string = MAIL_MESSAGE_INDEX;
+
+    constructor(){
+        elasticSearchClient.initElasticsearch([
+            MessageSchema
+        ]).then((res: any) => console.log("Elasticsearch MessageSchema initialized")).catch((err: any) => console.log(err));
+    }
 
     /**
      * Retrieves messages for a given user ID with pagination.

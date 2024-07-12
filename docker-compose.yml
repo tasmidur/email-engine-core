@@ -1,35 +1,41 @@
-# docker-compose.yml
 version: '3.8'
 
 services:
-  api-server:
+  email-engine-core:
     build: ./api
+    image:  email-engine-core
+    container_name: email-engine-core
     ports:
       - '3000:3000'
+      - '3019:3019'
     depends_on:
       - elasticsearch
     env_file:
       - ./api/.env
     volumes:
-      - .:/app/api
-      - /app/api/node_modules
+      - ./api:/app
+      - /app/node_modules
 
-  frontend-app:
+  email-engine-core-ui:
     build: ./frontend
+    image:  email-engine-core-ui
+    container_name: email-engine-core-ui
     ports:
       - '3001:3000'
     depends_on:
-      - api-server
+      - email-engine-core
     env_file:
       - ./frontend/.env
     volumes:
-      - .:/app/frontend
-      - /app/frontend/node_modules
+      - ./frontend:/app
+      - /app/node_modules
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
     environment:
       - discovery.type=single-node
+      - ELASTIC_USERNAME=elastic
+      - ELASTIC_PASSWORD=elastic1234578
     ports:
       - '9200:9200'
       - '9300:9300'
@@ -39,6 +45,6 @@ services:
     ports:
       - '5601:5601'
     environment:
-      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_URL: http://elastic:elastic1234578@elasticsearch:9200
     depends_on:
       - elasticsearch

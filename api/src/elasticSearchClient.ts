@@ -14,7 +14,13 @@ export class ElasticSearchClient {
     constructor() {
         const host = process.env.ELASTICSEARCH_HOST || '';
         console.log("Elasticsearch host:", host)
-        this.client = new Client({node: host});
+        this.client = new Client({
+            node: host,
+            auth:{
+                username:process.env.ELASTIC_USERNAME||'',
+                password:process.env.ELASTIC_PASSWORD||''
+            }
+        });
     }
 
     /**
@@ -41,7 +47,8 @@ export class ElasticSearchClient {
                     if ((await this.client.indices.exists({index}).then((response: any) => response.statusCode === 404))) {
                         await this.client.indices.create({index, body: {
                                 settings: settings
-                            }});
+                            }
+                        });
                     }
                     await this.client.indices.putMapping({index, body: {...mappings}});
                     indexNames.push(index);
@@ -230,7 +237,7 @@ export class ElasticSearchClient {
                     }
                 });
                 console.log("Bulk upsert errors:", erroredDocuments);
-                return erroredDocuments;
+                return {status: 200, message: "Bulk upsert errors",erroredDocuments};
             } else {
                 console.log("Bulk upsert successful");
                 return {status: 200, message: "Bulk upsert successful"};

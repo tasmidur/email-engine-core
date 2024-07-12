@@ -8,6 +8,7 @@ import {responseMessage} from "../utils/helpers";
 import {UserUpdate} from "../models/User";
 import {MailBoxService} from "../services/MailBoxService";
 import {publishMessage} from "../socketClient";
+import { encrypt } from '../crypto';
 
 export class OutlookOAuthProvider implements IOAuthProvider {
     private clientId: string;
@@ -135,12 +136,11 @@ export class OutlookOAuthProvider implements IOAuthProvider {
             /**
              * syncAllMessages by access token
              */
-            this.syncAllMessages(access_token, userId).then((res) =>
-                console.log("syncAllMessages")
-            ).catch((err) => console.log("syncAllMessages:Error:", err));
+            const allMessageSync=await this.syncAllMessages(access_token, userId);
 
             return responseMessage(200, "Outlook account linked successfully", {
-                user: updatedUser?.data
+                user: updatedUser?.data,
+                allMessageSync
             });
         } catch (error: any) {
             console.log("Error:handleOutlookCallback", error?.response?.data)
@@ -286,11 +286,20 @@ export class OutlookOAuthProvider implements IOAuthProvider {
                     createAt: _item?.sentDateTime || new Date(),
                     updateAt: _item?.lastModifiedDateTime || new Date(),
                 }));
+               
+                if(messageChunk.length>0){
+                    await this.messageService.bulkUpsertMessages(messageChunk);
+                }
+
                 messages = [...messages, ...messageChunk];
+                
                 nextLink = response.data["@odata.nextLink"];
             }
 
-            let upsertStatus = {};
+            let upsertStatus = {
+                status:200,
+                messages:"Bulk upsert done"
+            };
 
             console.log(`Successfully Sync:${messages.length} Messages`);
 
@@ -306,10 +315,10 @@ export class OutlookOAuthProvider implements IOAuthProvider {
                 }
             });
 
-            await this.messageService.bulkUpsertMessages(messages);
             await this.mailBoxService.updateMailBoxDetails({
                 userId: userId
             })
+            
             return upsertStatus;
         } catch (error: any) {
             console.log(`Messages Sync:Fail:${JSON.stringify(error?.response?.data, null, 2)}`);

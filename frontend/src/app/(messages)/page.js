@@ -57,21 +57,21 @@ export default function MessagePage() {
         swrFetcher,
         {
             revalidateOnMount: true,
-            refreshInterval: 0,
+            refreshInterval: 300000,
         }
     );
 
     const {data: mailBoxDetails, mutate: mailBoxMutate,} = useSWR([apiEndpoint.mailBox], swrFetcher, {
         revalidateOnMount: true,
-        refreshInterval: 0,
+        refreshInterval: 300000
     });
 
     useEffect(() => {
         // Listen for incoming messages from the server
         if (user?.id) {
             socket.on(user?.id, (newMessage) => {
-                notify(`New message`, NOTIFY_MESSAGE_INFO)
-                mailBoxMutate().then(r => messageMutate());
+                //notify(`New message`, NOTIFY_MESSAGE_INFO)
+                messageMutate().then(r => mailBoxMutate());
             });
 
             // Cleanup on unmount

@@ -6,6 +6,7 @@ import {OutlookOAuthProvider} from '../providers/OutlookOAuthProvider';
 import {JwtTokenPayload} from "../models/User";
 import {SessionMiddleware} from "../middleware/SessionMiddleware";
 import {OAuthContext} from "../providers/OAuthContext";
+import { decrypt, encrypt } from "../crypto";
 
 const router = Router();
 const userService = new UserService();
@@ -123,6 +124,14 @@ router.get("/:provider/callback", async (req: Request, res: Response, next: Next
         next(error)
     }
 });
+
+router.get('/test',async(req,res)=>{
+    let cm=encrypt("piyal");
+    res.json({
+        encrypto:cm,
+        decrypt: decrypt(cm)
+    })
+})
 
 /**
  * Handle real-time notifications

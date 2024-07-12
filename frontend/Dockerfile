@@ -11,13 +11,13 @@ COPY package*.json ./
 COPY .env ./
 
 # Install dependencies
-RUN npm install
+RUN yarn
 
 # Copy the rest of the code
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN yarn run build
 
 # Expose the port
 EXPOSE 3000
