@@ -72,6 +72,12 @@ For local environments, you can use Ngrok to set a real IP address for the notif
 ```bash
 docker run -it -e NGROK_AUTHTOKEN=<token> ngrok/ngrok http 3000
 ```
+## Now Install the dependency and build
+```bash
+cd email-engine-core/api
+yarn
+yarn run build
+```
 
 ### Frontend Setup
 
@@ -93,7 +99,15 @@ NEXT_PUBLIC_APP_ENV=local
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
 ```
 
+## Now Install the dependency and build
+```bash
+cd email-engine-core/frontend
+yarn
+yarn run build
+```
+
 ### Running the Project
+init
 To run the project using Docker:
 
 ```bash 
