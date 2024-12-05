@@ -1,7 +1,5 @@
-# Backend Web Developer Take-Home Challenge: Email Engine Core
-
-## The Challenge
-Your task is to develop a core system for an email client with essential functionalities. This system will connect with user email accounts (initially focusing on Outlook) and manage email data efficiently.
+# Email Engine Core
+The system is for an email client with essential functionalities. This system will connect with user email accounts (initially focusing on Outlook) and manage email data efficiently.
 
 ## Remarkable Challenge
 Continuously monitor for changes in user email data (e.g., moved emails, read/unread status, flags, deletions, new emails) even during the initial sync.
